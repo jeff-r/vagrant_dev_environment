@@ -1,0 +1,55 @@
+- name: Install vim
+  apt: name=vim update_cache=yes state=latest
+  sudo: yes
+  remote_user: root
+- name: Install npm
+  apt: name=npm update_cache=yes state=latest
+  sudo: yes
+  remote_user: root
+- name: Copy ssh directory
+  copy:
+    src: ~/.ssh/
+    dest: .ssh/
+    mode: 'preserve'
+    group: vagrant
+    owner: vagrant
+- name: Clone dotfiles
+  git:
+    repo: https://github.com/jeff-r/dotfiles.git
+    dest: dotfiles
+    update: no
+
+- name: Symlink .bashrc
+  sudo: yes
+  remote_user: root
+  file:
+    src: dotfiles/bash/bashrc
+    dest: .bashrc
+    force: true
+    state: link
+    group: vagrant
+    owner: vagrant
+
+- name: Symlink other dotfiles
+  file:
+    src: '{{ item.src }}'
+    dest: '{{ item.dest }}'
+    state: link
+    group: vagrant
+    owner: vagrant
+  with_items:
+    - { dest: .bash_aliases, src: dotfiles/bash/bash_aliases }
+    - { dest: .bash_functions, src: dotfiles/bash/bash_functions }
+    - { dest: .bash_path, src: dotfiles/bash/bash_path }
+    - { dest: .bash_profile, src: dotfiles/bash/bash_profile }
+    - { dest: .gitconfig, src: dotfiles/git/gitconfig }
+    - { dest: .tmux.conf, src: dotfiles/tmux/tmux.conf }
+    - { dest: .vim, src: dotfiles/vim/vim/ }
+    - { dest: .vimrc, src: dotfiles/vim/vimrc }
+
+- name: Create .vim/plugged/
+  file:
+    path: .vim/plugged
+    state: directory
+- name: Set up vim
+  command: vim +'PlugInstall --sync' +qa
